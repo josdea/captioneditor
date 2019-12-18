@@ -5,14 +5,9 @@
   <meta charset="UTF-8">
   <title>Caption Creator</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css">
-  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css"> -->
   <style>
-    /* * {
-      border: .5px solid pink;
-    } */
     #app {
       padding-top: 1em;
-      /* display: none; */
     }
 
     .left-editor {
@@ -33,13 +28,18 @@
 </head>
 
 <body class="h-100">
-
   <div id="app" class=" container h-100">
     <header>
     <h1>Caption Creator</h1>
     <a class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS Output</a>
     <input type="file" id="file-input" />
-
+    
+        <!-- <audio  id="mp3audio" class="col-3"
+        controls
+        src="psppodcast.mp3">
+            Your browser does not support the
+            <code>audio</code> element.
+    </audio> -->
   </header>
     <main v-if="awsjson != ''">
       <p>
@@ -49,7 +49,7 @@
       </p>
         <div class="form-group row">
           <label for="confidencefilter" class="col-2 col-form-label">Confidence Filter</label>
-          <div class="col-3">
+          <div class="col-2">
           <input type="number" class="form-control" id="confidencefilter" v-model="slidercurrent"
           :min="(Number(confidenceLow).toFixed(1))"
           step=".05"
@@ -82311,6 +82311,7 @@
           $('#exampleModalCenter').modal('show')
         },
         saveword: function (f) {
+          $('#exampleModalCenter').modal('hide')
           let tempitem = this.awsjson.results.items[this.wordtoupdateindex].alternatives[0]
           tempitem.content = f
           tempitem.confidence = 2
@@ -82328,7 +82329,7 @@
           var j = this.awsjson
           var c = j.results.items.length;
           for (i = 0; i < c; i++) {
-            if (j.results.items[i].type == "pronunciation" ) {
+            if (j.results.items[i].type == "pronunciation" && j.results.items[i].alternatives[0].content != '') {
               if (start_time == "") start_time = j.results.items[i].start_time;
               end_time = j.results.items[i].end_time;
               sentence += j.results.items[i].alternatives[0].content + " ";
