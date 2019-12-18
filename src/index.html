@@ -19,56 +19,78 @@
       font-size: 1.2rem;
     }
 
-    /* .left-editor {
-      overflow-y: auto;
-      height: auto;
-    } */
+    #file-input {
+      opacity: 0;
+    }
   </style>
 </head>
 
 <body class="h-100">
 
   <div id="app" class=" container h-100">
+    <button v-on:click="editword('index')">b test</button>  
     <header>
       <h1>Caption Creator</h1>
     </header>
     <main>
       Lowest Confidence: {{confidenceLow}}
-      <aws-input :awsinput="awsinput" v-model="awsinput"></aws-input>
-      <slider :slidermin="confidenceLow" :slidercurrent="slidercurrent" v-model="slidercurrent"></slider>
+      <div class="aws-input">
+       
+          <a class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS Output</a>
+          <input type="file" id="file-input" />
+
+        <!-- <div class="form-group">
+          <label for="exampleFormControlTextarea1">AWS Transcript Input</label>
+          <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" v-model="awsinput"></textarea>
+        </div> -->
+        <!-- <audio :ontimeupdate="updateTime(this)" id="mp3audio" class="col-3"
+        controls
+        src="psppodcast.mp3">
+            Your browser does not support the
+            <code>audio</code> element.
+    </audio> -->
+      </div>
+
+      <div class="row">
+        <div class="form-group col">
+          <label for="formControlRange">Confidence Input: ({{slidercurrent}})</label>
+          <input v-model="slidercurrent" type="range" class="form-control-range" id="formControlRange"
+            :min="(Number(confidenceLow).toFixed(1))" :max="1" step=".005">
+        </div>
+
+        <label class="col-2" for="checkbox">Show SRT Output <input type="checkbox" id="checkbox"
+            v-model="showSRT"></label>
+      </div>
       <div class="row">
 
-        <left-editor v-on:editword="editword($event)" class="col" :awsjson="awsjson" :usecolors="useColors" :slidercurrent="slidercurrent"></left-editor>
-        <!-- <div class="col-4">test</div> -->
-      </div>
+        <div class="col left-editor">
+          <p>
+          <template class="d-inline" v-for="(item, index) in awsjson.results.items">
+            <template class="bg-white" v-if="index != '0' && item.type == 'pronunciation'">&nbsp;</template>
+            <span v-on:click="editword(index)" v-if="item.alternatives[0].content != ''" 
+            :class="' ' + [(Number(item.alternatives[0].confidence) < Number(slidercurrent) && item.type != 'punctuation') ? 'bg-warning' : '']"
+            :title="item.alternatives[0].confidence">{{item.alternatives[0].content}}</span></template>
+          <!-- <button v-on:click="$emit('editword', 'index')">test</button> -->
+        
+        </p>
+        </div>
+        <div v-if="showSRT" class="col-5">
+          SRT Output
+          <div class="form-group row">
+            <label for="wordsperline" class="col">Max Words Per Line</label>
+            <input v-model="wordsPerLine" type="number" min="1" max="10" step="1" class="col form-control"
+              id="wordsperline" aria-describedby="emailHelp">
+          </div>
+          <button type="button" v-on:click="updateSRT" class="btn">Update SRT</button><button type="button"
+            v-on:click="downloadSRT" class="btn">Download SRT</button><br>
+          <textarea id="srt" class="w-100" v-model="srtOutput" style="height: 500px;"></textarea>
+          <!-- {{srtFormat}} -->
+
+        </div>
+      </div >
     </main>
     <footer>
     </footer>
-    <modal-editor  :wordtoupdate="wordtoupdate" :wordtoupdateindex="wordtoupdateindex" v-model="wordtoupdate"></modal-editor>
-  </div>
-
-  <template id="aws-input">
-    <div class="aws-input">
-      <div class="form-group">
-        <label for="exampleFormControlTextarea1">AWS Transcript Input</label>
-        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" :value="awsinput"
-          v-on:input="$emit('input', $event.target.value)"></textarea>
-      </div>
-    </div>
-  </template>
-
-  <template id="left-editor">
-    <div class="left-editor">
-      <span v-on:click="$emit('editword', index)" v-for="(item, index) in awsjson.results.items"
-        :class="[(Number(item.alternatives[0].confidence) < Number(slidercurrent)) ? 'bg-warning' : '']"
-        :title="item.alternatives[0].confidence">
-        <span  v-if="index != '0' && item.type == 'pronunciation'">&nbsp;</span>
-        {{item.alternatives[0].content}}</span>
-        <!-- <button v-on:click="$emit('editword', 'index')">test</button> -->
-    </div>
-  </template>
-
-  <template id="modal-editor">
     <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog " role="document">
@@ -82,26 +104,18 @@
           <div class="modal-body">
             <div class="form-group">
               <label for="wordtoupdate" class="sr-only">Update Word</label>
-              <input v-on:input="$emit('input', $event.target.value)" type="text" class="form-control" id="wordtoupdate" 
-                :value="wordtoupdate">
+              <input v-model="wordtoupdate" type="text" class="form-control" id="wordtoupdate">
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button v-on:click="$emit('saveword', wordtoupdate)"  type="button" class="btn btn-primary" data-dismiss="modal">Save Changes</button>
+            <button v-on:click="saveword(wordtoupdate)" type="button" class="btn btn-primary" data-dismiss="modal">Save
+              Changes</button>
           </div>
         </div>
       </div>
     </div>
-  </template>
-
-  <template id="slider">
-    <div class="form-group">
-      <label for="formControlRange">Confidence Input: ({{slidercurrent}})</label>
-      <input v-on:input="$emit('input', $event.target.value)" type="range" class="form-control-range"
-        id="formControlRange" :min="(Number(slidermin).toFixed(1))" :max="1" step=".005" :value="slidercurrent">
-    </div>
-  </template>
+  </div>
 
   <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
     integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
@@ -115,6 +129,7 @@
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
   <script>
+    var mp3audio = document.getElementById("mp3audio");
     var awsjson = {
       "jobName": "psp-podcast2",
       "accountId": "133414103718",
@@ -82243,41 +82258,33 @@
       "status": "COMPLETED"
     };
 
-    Vue.component('aws-input', {
-      props: ['awsinput'],
-      template: '#aws-input'
-    });
-
-    Vue.component('left-editor', {
-      props: ['awsjson', 'usecolors', 'slidercurrent'],
-      template: '#left-editor'
-    });
-
-    Vue.component('modal-editor', {
-      props: ['wordtoupdate','wordtoupdateindex'],
-      template: '#modal-editor'
-    });
-
-    Vue.component('slider', {
-      props: ['slidermin', 'slidercurrent'],
-      template: '#slider'
-    });
-
     var app = new Vue({
       el: '#app',
       data: {
-        awsinput: JSON.stringify(awsjson),
+        // awsinput: JSON.stringify(awsjson),
+        awsinput: "",
         slidercurrent: 0.9,
         useColors: false,
         editedWords: [],
-        awsjson: awsjsonfull,
-        // awsjson: awsjson,
+        showSRT: true,
+        srtOutput: '',
+        wordsPerLine: 10,
+        mp3audio: -1,
+        awsjson: awsjson,
+        // awsjson: awsjsonfull,
+        // awsjson: '',
         wordtoupdateindex: -1,
         wordtoupdate: '',
       },
       created: function () {
         console.log("Created")
+        // this.mp3audio = 
 
+      },
+      updated: function () {
+        console.log("mounted ")
+        // this.mp3audio = this.$refs.audio.currentTime
+        // $(this.$refs.vuemodal).on("hidden.bs.modal", this.modalHidden)
       },
       computed: {
         confidenceLow: function () {
@@ -82292,31 +82299,131 @@
                 word = item.alternatives[0].content
               }
             }
-            // console.log(item)
           })
           console.log('word ' + word + ' index ' + cLowIndex + ' confidence ' + cLow)
-
           return cLow
-        }
+        },
       },
       methods: {
+        updateTime(e) {
+          this.mp3audio = e.currentTime
+          console.log("in update time ")
+          console.log(e)
+        },
         editword: function (e) {
           console.log('in edit word')
           console.log(e)
           this.wordtoupdateindex = e
-           this.wordtoupdate = awsjson.results.items[this.wordtoupdateindex].alternatives[0].content
+          // this.wordtoupdateindex = 0
+          this.wordtoupdate = this.awsjson.results.items[e].alternatives[0].content
+          // this.wordtoupdate = "pizza"
           $('#exampleModalCenter').modal('show')
 
         },
-        saveword: function(f){
+        saveword: function (f) {
           console.log("in save word")
           console.log(f)
 
-          this.awsjson.results.items[this.wordtoupdateindex].alternatives[0].content = e
+          // let tempitem = {"content": f, "confidence": (this.awsjson.results.items[this.wordtoupdateindex].alternatives[0].confidence + 1)}
+          let tempitem = this.awsjson.results.items[this.wordtoupdateindex].alternatives[0]
+          tempitem.content = f
+          // console.log("current conf "+ tempitem.confidence)
+          tempitem.confidence = 2
+          // console.log("after conf "+ tempitem.confidence)
+          this.awsjson.results.items[this.wordtoupdateindex].alternatives.slice(0, 1, tempitem)
 
+        },
+        updateSRT: function () {
+          let srtOutput = "";
+          var start_time = "";
+          var end_time = "";
+          var sentence = "";
+          var n = 1;
+          var t = 1;
+          var wtb = this.wordsPerLine
+
+          var j = this.awsjson
+          var c = j.results.items.length;
+          for (i = 0; i < c; i++) {
+            if (j.results.items[i].type == "pronunciation") {
+              if (start_time == "") start_time = j.results.items[i].start_time;
+              end_time = j.results.items[i].end_time;
+              sentence += j.results.items[i].alternatives[0].content + " ";
+              t++;
+            } else if (j.results.items[i].type == "punctuation" && j.results.items[i].alternatives[0].content ==
+              ".") {
+              srtOutput += n + "\n";
+              srtOutput += this.formatTime(start_time) + " --> " + this.formatTime(end_time) + "\n" + sentence +
+                "\n\n";
+              sentence = "";
+              start_time = "";
+              n++;
+              t = 1;
+            }
+            if (t > wtb) {
+              srtOutput += n + "\n";
+              srtOutput += this.formatTime(start_time) + " --> " + this.formatTime(end_time) + "\n" + sentence +
+                "\n\n";
+              sentence = "";
+              start_time = "";
+              n++;
+              t = 1;
+            }
+          }
+          this.srtOutput = srtOutput
+          // return srtOutput
+        },
+        downloadSRT: function () {
+          let text = this.srtOutput;
+          let d = new Date();
+          let theDate = [d.getFullYear(), d.getMonth() + 1, d.getDate(), '_', d.getHours(), d.getMinutes(), d
+            .getSeconds()
+          ]
+
+          let filename = 'SRT_Output_'
+          filename += theDate.join('') + ".txt";
+          download(filename, text);
+
+        },
+        openFromFile: function(){
+          let input = document.getElementById('file-input')
+        input.addEventListener('change', (e) => {
+          var file = e.target.files[0];
+          if (!file) {
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = (e) => {
+            var contents = e.target.result;
+            this.awsjson = JSON.parse(contents);
+          };
+          reader.readAsText(file);
+        })
+        input.click()
+        this.updateSRT()
+        },
+        formatTime(t) {
+          a = t.split(".");
+          var date = new Date(null);
+          date.setSeconds(a[0]); // specify value for SECONDS here
+          var result = date.toISOString().substr(11, 8);
+          return result + "," + a[1];
         }
       }
     });
+
+    function download(filename, text) {
+      var element = document.createElement("a");
+      element.setAttribute(
+        "href",
+        "data:text/plain;charset=utf-8," + encodeURIComponent(text)
+      );
+      element.setAttribute("download", filename);
+      element.style.display = "none";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
   </script>
 </body>
 
