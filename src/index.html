@@ -14,9 +14,11 @@
       padding-top: 1em;
       /* display: none; */
     }
-    .left-editor{
-      font-size: 1.1rem;
+
+    .left-editor {
+      font-size: 1.2rem;
     }
+
     /* .left-editor {
       overflow-y: auto;
       height: auto;
@@ -31,78 +33,89 @@
       <h1>Caption Creator</h1>
     </header>
     <main>
+      Lowest Confidence: {{confidenceLow}}
       <aws-input :awsinput="awsinput" v-model="awsinput"></aws-input>
+      <slider :slidermin="confidenceLow" :slidercurrent="slidercurrent" v-model="slidercurrent"></slider>
       <div class="row">
 
-        <left-editor class="col" :words="words" :awsjson="awsJSON"></left-editor>
+        <left-editor v-on:editword="editword($event)" class="col" :awsjson="awsjson" :usecolors="useColors" :slidercurrent="slidercurrent"></left-editor>
         <!-- <div class="col-4">test</div> -->
       </div>
     </main>
     <footer>
     </footer>
+    <modal-editor  :wordtoupdate="wordtoupdate" :wordtoupdateindex="wordtoupdateindex" v-model="wordtoupdate"></modal-editor>
   </div>
 
   <template id="aws-input">
     <div class="aws-input">
       <div class="form-group">
-        <label for="exampleFormControlTextarea1">Example textarea</label>
-        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" :value="awsinput" v-on:input="$emit('input', $event.target.value)"></textarea>
+        <label for="exampleFormControlTextarea1">AWS Transcript Input</label>
+        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" :value="awsinput"
+          v-on:input="$emit('input', $event.target.value)"></textarea>
       </div>
     </div>
   </template>
 
   <template id="left-editor">
     <div class="left-editor">
-      <!-- <a v-for="(word, index) in awsjson.results.items" class="btn btn-outline-secondary" href="#" role="button">{{word.alternatives[0].content}}</a> -->
-      <span v-for="(item, index) in awsjson.results.items" class="" :style="'background-color: rgb(' + (item.alternatives[0].confidence * 255) + ',0,0);'" :title="item.alternatives[0].confidence">
-        <span v-if="index != '0' && item.type == 'pronunciation'">&nbsp;</span>
+      <span v-on:click="$emit('editword', index)" v-for="(item, index) in awsjson.results.items"
+        :class="[(Number(item.alternatives[0].confidence) < Number(slidercurrent)) ? 'bg-warning' : '']"
+        :title="item.alternatives[0].confidence">
+        <span  v-if="index != '0' && item.type == 'pronunciation'">&nbsp;</span>
         {{item.alternatives[0].content}}</span>
-      <!-- <input v-for="(item, index) in awsjson.results.items" type="text" v-model="item.alternatives[0].content"> -->
-      <!-- <span editable="true" v-for="item in items">{{item}}</span> -->
+        <!-- <button v-on:click="$emit('editword', 'index')">test</button> -->
     </div>
   </template>
 
   <template id="modal-editor">
     <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-dialog " role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalCenterTitle">Update Caption</h5>
+            <h5 class="modal-title" id="exampleModalCenterTitle">Update Word</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="exampleInputEmail1" class="sr-only">Update Word</label>
-              <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp"
-                v-model="wordtoupdate">
-              <!-- <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> -->
+              <label for="wordtoupdate" class="sr-only">Update Word</label>
+              <input v-on:input="$emit('input', $event.target.value)" type="text" class="form-control" id="wordtoupdate" 
+                :value="wordtoupdate">
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+            <button v-on:click="$emit('saveword', wordtoupdate)"  type="button" class="btn btn-primary" data-dismiss="modal">Save Changes</button>
           </div>
         </div>
       </div>
     </div>
   </template>
 
+  <template id="slider">
+    <div class="form-group">
+      <label for="formControlRange">Confidence Input: ({{slidercurrent}})</label>
+      <input v-on:input="$emit('input', $event.target.value)" type="range" class="form-control-range"
+        id="formControlRange" :min="(Number(slidermin).toFixed(1))" :max="1" step=".005" :value="slidercurrent">
+    </div>
+  </template>
+
   <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
     integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
   </script>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
     integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
-  </script> -->
+  </script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
     integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
   </script>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
   <script>
-    var awsJSON = {
+    var awsjson = {
       "jobName": "psp-podcast2",
       "accountId": "133414103718",
       "results": {
@@ -22152,7 +22165,7 @@
       },
       "status": "COMPLETED"
     };
-    var awsJSONfull = {
+    var awsjsonfull = {
       "jobName": "psp-podcast2",
       "accountId": "133414103718",
       "results": {
@@ -82236,48 +82249,70 @@
     });
 
     Vue.component('left-editor', {
-      props: ['words', 'awsjson'],
+      props: ['awsjson', 'usecolors', 'slidercurrent'],
       template: '#left-editor'
     });
 
     Vue.component('modal-editor', {
-      props: ['wordtoupdate'],
+      props: ['wordtoupdate','wordtoupdateindex'],
       template: '#modal-editor'
+    });
+
+    Vue.component('slider', {
+      props: ['slidermin', 'slidercurrent'],
+      template: '#slider'
     });
 
     var app = new Vue({
       el: '#app',
       data: {
-        awsinput: JSON.stringify(awsJSON),
+        awsinput: JSON.stringify(awsjson),
+        slidercurrent: 0.9,
+        useColors: false,
         editedWords: [],
-        awsJSON: awsJSON,
+        awsjson: awsjsonfull,
+        // awsjson: awsjson,
+        wordtoupdateindex: -1,
         wordtoupdate: '',
-        confLow: '',
-        confHigh: ''
       },
       created: function () {
         console.log("Created")
-        this.confidenceRange()
+
       },
       computed: {
-        confidenceRange: function () {
-          
+        confidenceLow: function () {
+          let cLow = 1;
+          let cLowIndex = 0;
+          let word = ''
+          this.awsjson.results.items.forEach((item, index) => {
+            if (item.type == "pronunciation") {
+              if (cLow > item.alternatives[0].confidence) {
+                cLow = item.alternatives[0].confidence
+                cLowIndex = index
+                word = item.alternatives[0].content
+              }
+            }
+            // console.log(item)
+          })
+          console.log('word ' + word + ' index ' + cLowIndex + ' confidence ' + cLow)
 
-          
-          return this.message.split('').reverse().join('')
-        },
-        words: function () {
-          return ['a', 'b']
+          return cLow
         }
       },
       methods: {
-        confidenceRange: function () {
-          let high = 0;
-          let low = 1;
+        editword: function (e) {
+          console.log('in edit word')
+          console.log(e)
+          this.wordtoupdateindex = e
+           this.wordtoupdate = awsjson.results.items[this.wordtoupdateindex].alternatives[0].content
+          $('#exampleModalCenter').modal('show')
 
-            this.awsJSON.results.items.forEach(item =>{
-              console.log(item)
-            })
+        },
+        saveword: function(f){
+          console.log("in save word")
+          console.log(f)
+
+          this.awsjson.results.items[this.wordtoupdateindex].alternatives[0].content = e
 
         }
       }
