@@ -52,7 +52,7 @@
     <header>
       <h1>Caption Creator</h1>
       <a class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS Output</a>
-      <input type="file" id="file-input" />
+      <input type="file" id="file-input" accept=".json" />
 
       <div v-if="awsjson != ''" class="top row">
         <p class="col">
@@ -82420,7 +82420,6 @@
                   nCaption = false
                   wordCount = 0
                   srtOutput.push(captionNumber, timing, caption, '\n')
-                  captionNumber += 1
                   caption = ""
                   nCaption = true
                 } //TODO add periods
