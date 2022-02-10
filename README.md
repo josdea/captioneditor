@@ -1,8 +1,3 @@
-# vue-bootstrap-scss-gulp-starter
- A starter setup for simple VueJS apps with gulp and bootstrap
+# Caption Editor from Amazon Transcribe Output
 
- Requires Node to be installed globally on the computer then run the following in the command line to get gulp and sass support running as well as browser auto loading.
- 
-- npm update
-- npm install
-- gulp
+- AWS Transcribe costs around $0.00050 cents per second of audio transcription. And it gives you 60 minutes a month free under their free tier. The output, however, is a large JSON (Javascript Object) with confidence intervals. This must be converted into a caption file in either the SRT or VTT format. This tool helps with this. 

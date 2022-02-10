@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css">
   <style>
     #app {
-      padding-top: 1em;
       display: flex;
       flex-flow: column nowrap;
       justify-content: center;
@@ -22,14 +21,8 @@
 
     .left-editor {
       font-size: 1.2rem;
-      height: auto;
+      width: 90%;
       overflow-y: auto;
-    }
-
-    #srt {
-      height: auto;
-      min-height: 600px;
-      /* style="height: 500px;" */
     }
 
     #file-input {
@@ -39,52 +32,15 @@
     .pointer {
       cursor: pointer;
     }
-
-    button {
-      margin-right: .5rem;
-      margin-bottom: .5rem;
-    }
   </style>
 </head>
 
-<body class="h-100">
+<body class="h-100 p-2">
   <div id="app" class=" container h-100">
-    <header>
-      <h1>Caption Creator</h1>
-      <a class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS Output</a>
-      <input type="file" id="file-input" accept=".json" />
-
-      <div v-if="awsjson != ''" class="top row">
-        <p class="col">
-          Lowest Confidence Word: {{confidenceLow}}<br>
-          Average Confidence: {{confidenceAverage}}<br>
-          Standard Deviation: {{standardDeviation}} ({{Math.pow(standardDeviation,2).toFixed(4)}})<br>
-          Total Words: {{awsjson.results.items.length}}
-        </p>
-        <div class="col form-group row">
-          <label for="confidencefilter" class="col-2 col-form-label">Confidence Filter</label>
-          <div class="col">
-            <input type="number" class="form-control" id="confidencefilter" v-model="slidercurrent"
-              :min="(Number(confidenceLow).toFixed(1))" step=".05" max="1">
-          </div>
-          <div class="col">
-            <label class="col-form-label" for="checkbox">Show SRT Output <input type="checkbox" id="checkbox"
-                v-model="showSRT"></label>
-          </div>
-        </div>
-      </div>
-      <!-- TODO look at question marks -->
-      <!-- <audio  id="mp3audio" class="col-3"
-        controls
-        src="psppodcast.mp3">
-            Your browser does not support the
-            <code>audio</code> element.
-    </audio> -->
-    </header>
+    <h1 v-on:click="openFromFile" title="Load AWS Output File" class="pointer">Caption Creator</h1>
     <main v-if="awsjson != ''" class="h-100">
-
       <div class="row h-100">
-        <div class="col left-editor">
+        <div v-if="showTranscript" class="col left-editor h-100">
           <p>
             <template class="d-inline" v-for="(item, index) in awsjson.results.items">
               <template class="bg-white" v-if="index != '0' && item.type == 'pronunciation'">&nbsp;</template>
@@ -98,26 +54,55 @@
             </template>
           </p>
         </div>
-        <div v-if="showSRT" class="col">
-          SRT Output
-          <div class="row">
-            <div class="col form-group">
-              <label for="wordsperline" class="">Max Characters Per Line</label>
-              <input v-model="charactersPerLine" type="number" min="1" max="50" step="1" class="w-100 form-control"
-                id="wordsperline" aria-describedby="wordsperline">
-            </div>
-            <div class="col-9">
-              <button type="button" v-on:click="updateSRT" class="btn">Update SRT</button><button type="button"
-                v-on:click="downloadSRT" class="btn">Download SRT</button><button type="button" v-on:click="downloadVTT"
-                class="btn">Download WEBVTT</button><br>
-            </div>
-          </div>
-          <textarea id="srt" class="w-100" v-model="srtOutput"></textarea>
+        <div v-if="showVTT" class="col h-100">
+          <textarea id="vtt" class="w-100 h-100" v-model="vttOutput"></textarea>
         </div>
       </div>
     </main>
-    <!-- <footer>
-    </footer> -->
+    <footer>
+      <a v-if="awsjson == ''" class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS
+        Output</a>
+      <input v-show="awsjson == ''" type="file" id="file-input" accept=".json" />
+
+      <div v-if="awsjson != ''" class="card-deck p-2">
+        <div class="card">
+          <div class="card-body">
+            <p class="card-text">
+              Lowest Confidence Word: {{confidenceLow}}<br>
+              Average Confidence: {{confidenceAverage}}<br>
+              Standard Deviation: {{standardDeviation}} ({{Math.pow(standardDeviation,2).toFixed(4)}})<br>
+              Total Words: {{awsjson.results.items.length}}
+            </p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <p class="card-text">
+              <label for="confidencefilter" class="form-label">Confidence Filter</label>
+              <input type="number" class="form-control" id="confidencefilter" v-model="slidercurrent"
+                :min="(Number(confidenceLow).toFixed(1))" step=".05" max="1">
+            </p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <p class="card-text">
+              <label class="col-form-label" for="checkbox">VTT Output <input type="checkbox" id="checkbox"
+                  v-model="showVTT"></label> <label class="col-form-label" for="checkbox2">Transcript
+                <input type="checkbox" id="checkbox2" v-model="showTranscript"></label>
+            <div class="form-row">
+              <label for="charsperline" class="col">Characters / Line</label>
+              <input v-model="charactersPerLine" type="number" min="1" max="50" step="1" class="col-4 form-control"
+                id="charsperline" aria-describedby="charsperline">
+            </div>
+            <button type="button" v-on:click="updateVTT" class="btn">Update VTT</button>
+            <button type="button" v-on:click="downloadSRT" class="btn" title="Download SRT File">SRT &#8595;</button>
+            <button type="button" v-on:click="downloadVTT" class="btn" title="Download SRT File">WEBVTT &#8595;</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
     <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog " role="document">
@@ -139,6 +124,7 @@
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             <button v-on:click="saveword(wordtoupdate)" type="button" class="btn btn-primary" data-dismiss="modal">Save
               Changes</button>
+            <br>
           </div>
         </div>
       </div>
@@ -157,7 +143,6 @@
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
   <script>
-    // var mp3audio = document.getElementById("mp3audio");
     var awsjson = {
       "jobName": "psp-podcast2",
       "accountId": "133414103718",
@@ -22208,31 +22193,27 @@
       },
       "status": "COMPLETED"
     };
+
     var app = new Vue({
       el: '#app',
       data: {
-        includePunctuation: true,
-        periodStartsCaption: true,
-        awsinput: "",
+        // includePunctuation: true,
+        // periodStartsCaption: true,
         slidercurrent: 0.9,
-        editedWords: [],
-        showSRT: true,
-        srtOutput: '',
+        showVTT: true,
+        showTranscript: true,
         vttOutput: '',
         standardDeviation: 0,
-        // srtOutput2: '',
-        wordsPerLine: 5,
         charactersPerLine: 42,
-        mp3audio: -1,
-        // awsjson: awsjson,
         awsjson: awsjson,
-        // awsjson: '',
         wordtoupdateindex: -1,
         wordtoupdate: '',
+        phrases: []
       },
       created: function () {
-        // console.log("Created")
-        this.updateSRT() //TODO remove after testing
+
+        this.updateVTT()
+        // this.createPhrases()
       },
       computed: {
         confidenceLow: function () {
@@ -22254,33 +22235,25 @@
           let avg = 0
           let stndDev = 0
           let data = []
-
           let getMean = function (data) {
             return data.reduce(function (a, b) {
               return Number(a) + Number(b);
             }) / data.length;
           };
-
           let getSD = function (data) {
             let m = getMean(data);
             return Math.sqrt(data.reduce(function (sq, n) {
               return sq + Math.pow(n - m, 2);
             }, 0) / (data.length - 1));
           };
-
           this.awsjson.results.items.forEach((item, index) => {
             if (item.type == "pronunciation") {
               data.push(Number(item.alternatives[0].confidence))
             }
           })
-
           this.standardDeviation = getSD(data).toFixed(5)
           avg = getMean(data).toFixed(5)
-
           this.slidercurrent = Number(avg).toFixed(2)
-          // + Math.pow(this.standardDeviation,2)).toFixed(2)
-          // + Number(this.standardDeviation)
-
           return avg
         }
       },
@@ -22290,36 +22263,196 @@
           this.wordtoupdate = this.awsjson.results.items[e].alternatives[0].content
           $('#exampleModalCenter').modal('show')
         },
+        createPhrases: function () {
+          let phrases = []
+          let phrase = []
+          let previousItemEndTime = ''
+          let previousItemStartTime = ''
+          let itemContent = ''
+          let phraseStart = ''
+          let phraseEnd = ''
+
+          function Item(content, type, start_time, end_time, confidence) {
+            this.content = content
+            this.type = type
+            this.start_time = Number(start_time)
+            this.end_time = Number(end_time)
+            this.confidence = Number(confidence)
+          }
+          // function Phrase(item){
+          //     this.item = item
+          // }
+
+
+
+          this.awsjson.results.items.forEach(item => {
+            itemContent = item.alternatives[0].content
+
+            if (phrase.length == 0) {
+              phraseStart = Number(item.start_time)
+            }
+
+            if (item.type == 'pronunciation') {
+
+              phrase.push(new Item(item.alternatives[0].content, item.type, item
+                .start_time, item.end_time, item.alternatives[0].confidence
+              ))
+              previousItemStartTime = item.start_time
+              previousItemEndTime = item.end_time
+            } else if (item.type == 'punctuation') {
+              if (itemContent == '.' || itemContent == '?') {
+
+
+
+                phrase.push(new Item(item.alternatives[0].content, item.type,
+                  previousItemStartTime, previousItemEndTime, item
+                    .alternatives[0].confidence))
+
+                console.log('Start ' + phraseStart + ' End ' + previousItemEndTime +
+                  ' Count ' + phrase.length + ' Diff ' + Math.floor(Number(
+                    previousItemEndTime) - phraseStart))
+                phrases.push(phrase.concat())
+                phrase.length = 0
+              }
+            }
+
+
+          })
+          this.phrases = phrases
+          return phrases
+        },
         saveword: function (f) {
           $('#exampleModalCenter').modal('hide')
           let tempitem = this.awsjson.results.items[this.wordtoupdateindex].alternatives[0]
           tempitem.content = f
           tempitem.confidence = 1
           this.awsjson.results.items[this.wordtoupdateindex].alternatives.slice(0, 1, tempitem)
+          // this.updateVTT()
         },
-        updateSRT: function () {
+        updateVTT: function () {
+          let itemContent = ''
+          let itemStartTime = ''
+          let itemEndTime = ''
+          let itemLength = 0
+          let arrCaption = []
+          let captionLength = 0
+          let charactersPerLine = this.charactersPerLine
+          let captionStartTime = ''
+          let captionEndTime = ''
+          let endCaption = false
+          let vttOutput = ['WEBVTT', '']
+          let previousItemEndTime = ''
+          let nextItemStartTime = ''
+          let nextItemEndTime = ''
+
+          this.awsjson.results.items.forEach((item, itemindex) => {
+            captionLength = arrCaption.join('').length
+            //ITEM LOGIC
+            itemContent = item.alternatives[0].content
+            if (item.type == 'pronunciation') {
+              itemStartTime = item.start_time
+              itemEndTime = item.end_time
+
+              //   TODO check for words that follow with a period
+
+              // if there are 2 items after this one
+              // if the next one is a word get the end time
+              // if the one after that is puncutation and its a period or question mark
+              // then update the end time and add both to this caption
+              // skip the next two somehow
+              // let i1 = itemindex + 1
+              // if((itemindex+2) <=  this.awsjson.results.items.length){
+              // if(this.awsjson.results.items[i1].type = 'pronunciation'){
+              //         console.log(this.awsjson.results.items[(itemindex+1)].start_time)
+              //       nextItemStartTime = this.awsjson.results.items[(itemindex+1)].start_time
+              //       nextItemEndTime = this.awsjson.results.items[(itemindex+1)].end_time
+              //       if(nextItemStartTime - itemEndTime < 2){
+              //           itemEndTime = nextItemStartTime
+              //       }
+              // }
+              //   }
+
+
+              itemLength = itemContent.length
+
+              if (captionLength == 0) { //a new caption
+                captionStartTime = itemStartTime
+                arrCaption.push(itemContent)
+                //   previousItemEndTime = itemEndTime
+              } else if (captionLength + itemLength <=
+                charactersPerLine) { // still room, not the first
+                arrCaption.push(' ' + itemContent)
+                //   previousItemEndTime = itemEndTime
+              } else if (captionLength + itemLength > charactersPerLine) { // too full
+
+                if (itemStartTime - previousItemEndTime < 2 && itemStartTime !=
+                  previousItemEndTime) {
+                  previousItemEndTime = itemStartTime
+                } else if (itemStartTime != previousItemEndTime) {
+                  previousItemEndTime = Number(previousItemEndTime) + 2
+                }
+
+
+                captionEndTime = previousItemEndTime
+                vttOutput.push([this.getTimeCode(captionStartTime), this
+                  .getTimeCode(captionEndTime)
+                ].join(' --> '),
+                  arrCaption.join(''), '')
+                arrCaption.length = 0
+                captionStartTime = itemStartTime
+                arrCaption.push(itemContent)
+                //   previousItemEndTime = itemEndTime
+              } //end if captionlength + itemlength is greater that chars per line
+
+
+            } else if (item.type == 'punctuation') {
+              if (itemContent == '.' || itemContent == '?') {
+                captionEndTime =
+                  itemEndTime // this will be from the item previous since punctuation has no end times
+                arrCaption.push(itemContent)
+
+                vttOutput.push([this.getTimeCode(captionStartTime), this
+                  .getTimeCode(captionEndTime)
+                ].join(' --> '),
+                  arrCaption.join(''), '')
+                arrCaption.length = 0
+                // endCaption = false
+                //   previousItemEndTime = itemEndTime
+              } else if (itemContent == ',') {
+                itemContent = itemContent + ''
+                arrCaption.push(itemContent)
+              } //end if comma
+            } //end if punctuation
+
+            previousItemEndTime = itemEndTime
+          })
+          this.vttOutput = vttOutput.join('\n')
+        },
+        updateVTTOLD: function () {
           let captionNumber = 0
           let arrTiming = []
           let arrCaption = []
           let srtOutput = []
           let vttOutput = ['WEBVTT', '']
+          let start_time = ''
           let end_time = ''
           let itemContent = ''
           let nCaption = false
           let charactersPerLine = this.charactersPerLine
           let captionLength = 0
-
           this.awsjson.results.items.forEach((item, itemindex) => {
             itemContent = item.alternatives[0].content
-            // captionLength = arrCaption.join('').length
-            if ((arrCaption.join('').length + itemContent.length < charactersPerLine && arrCaption.length !=
-              0) || item.type == 'punctuation') { //not too long, not first word, or its just punctuation
-              if (item.type == 'pronunciation' && itemContent != '') { //word not punctuation
+            if ((arrCaption.join('').length + itemContent.length < charactersPerLine &&
+              arrCaption.length !=
+              0) || item.type ==
+              'punctuation') { //not too long, not first word, or its just punctuation
+              if (item.type == 'pronunciation' && itemContent !=
+                '') { //word not punctuation
                 arrCaption.push(' ' + itemContent)
                 end_time = item.end_time //store the last end time
               } else if (item.type == 'punctuation') {
-                arrCaption.push(itemContent + ' ')
-                if (itemContent == '.') {
+                arrCaption.push(itemContent + '')
+                if (itemContent == '.' || itemContent == '?') {
                   nCaption = true
                 }
               }
@@ -22329,22 +22462,24 @@
             if (nCaption == true) {
               nCaption = false
               arrTiming.push(this.getTimeCode(end_time))
-              srtOutput.push(captionNumber, arrTiming.join(' --> '), arrCaption.join(''), '')
-              vttOutput.push(captionNumber, arrTiming.join(' --> ').replace(/,/g, '.'), arrCaption.join(''),
-                '')
+              srtOutput.push(captionNumber, arrTiming.join(' --> '), arrCaption.join(
+                ''), '')
               arrCaption.length = 0
               arrTiming.length = 0
             }
             if (arrCaption.length == 0) { // first word in a new caption line
               if (item.type == 'pronunciation') { //word not punctuation
+                start_time = item.start_time
                 arrTiming.push(this.getTimeCode(item.start_time)) // add start time
                 arrCaption.push(itemContent) //add word content to caption line
                 captionNumber++ //augment caption number
               }
             }
           })
-          this.srtOutput = srtOutput.join('\n')
-          this.vttOutput = vttOutput.join('\n')
+          srtOutput = srtOutput.join('\n')
+          this.vttOutput = 'WEBVTT\n\n' + srtOutput.replace(/(\d+\n)(\d)/g, '$2').replace(
+            /(:\d+)(,)(\d+)/g,
+            '$1.$3')
         },
         getTimeCode: function (timeInSeconds) {
           var pad = function (num, size) {
@@ -22355,41 +22490,42 @@
             minutes = Math.floor(time / 60) % 60,
             seconds = Math.floor(time - minutes * 60),
             milliseconds = time.slice(-3);
-
-          return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + ',' + pad(milliseconds, 3);
-
-          // 25.65
-          // hundreths = this.padZeros((decimalSeconds % 1 * 1000), 3) // 470
-          // hours = this.padZeros((decimalSeconds / 60 / 60), 2) //0
-          // seconds = this.padZeros((((decimalSeconds / 60) % 1) * 60), 2)
-          // minutes = this.padZeros((decimalSeconds / 60), 2)
-          // return hours + ':' + minutes + ":" + seconds + "," + hundreths
+          return pad(hours, 2) + ':' + pad(minutes, 2) + ':' + pad(seconds, 2) + '.' + pad(
+            milliseconds, 3);
         },
-        padZeros: function (n, width, z) {
-          z = z || '0';
-          n = n + '';
-          return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+        getSRT: function () {
+          let text = ''
+          let captionArray = this.vttOutput.replace(/\n{3,}/g, '\n\n').replace(/WEBVTT\n\n/, '')
+            .replace(
+              /(:\d+)(.)(\d{3,3})/g,
+              '$1,$3').split('\n\n')
+          captionArray.forEach((cap, indexcap) => {
+            text += (indexcap + 1) + '\n' + cap + '\n\n'
+          })
+          return text
         },
         downloadSRT: function () {
-          let text = this.srtOutput;
+          let text = this.getSRT()
           let d = new Date();
-          let theDate = [d.getFullYear(), d.getMonth() + 1, d.getDate(), '_', d.getHours(), d.getMinutes(), d
-            .getSeconds()
+          let theDate = [d.getFullYear(), d.getMonth() + 1, d.getDate(), '_', d.getHours(), d
+            .getMinutes(), d
+              .getSeconds()
           ]
           let filename = 'SRT_Output_'
           filename += theDate.join('') + ".srt";
+          //   console.log(text)
           download(filename, text);
         },
         downloadVTT: function () {
           let text = this.vttOutput
           let d = new Date();
-          let theDate = [d.getFullYear(), d.getMonth() + 1, d.getDate(), '_', d.getHours(), d.getMinutes(), d
-            .getSeconds()
+          let theDate = [d.getFullYear(), d.getMonth() + 1, d.getDate(), '_', d.getHours(), d
+            .getMinutes(), d
+              .getSeconds()
           ]
           let filename = 'VTT_Output_'
           filename += theDate.join('') + ".vtt";
           download(filename, text);
-
         },
         openFromFile: function () {
           let input = document.getElementById('file-input')
@@ -22402,12 +22538,12 @@
             reader.onload = (e) => {
               var contents = e.target.result;
               this.awsjson = JSON.parse(contents);
-              this.updateSRT()
+              this.updateVTT()
+              this.slidercurrent = this.confidenceAverage * .9
             };
             reader.readAsText(file);
           })
           input.click()
-          this.slidercurrent = this.confidenceAverage * .9
         }
       }
     });
@@ -22418,7 +22554,7 @@
         "href",
         "data:text/plain;charset=utf-8," + encodeURIComponent(text)
       );
-      element.setAttribute("download", filename);
+      element.setAttribute("download", window.prompt("Please enter file name:", filename));
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
