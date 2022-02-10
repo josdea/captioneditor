@@ -478,11 +478,14 @@
         "href",
         "data:text/plain;charset=utf-8," + encodeURIComponent(text)
       );
-      element.setAttribute("download", window.prompt("Please enter file name:", filename));
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+      let fname = window.prompt("Please enter file name:", filename);
+      if (fname != null) {
+        element.setAttribute("download", fname);
+        element.style.display = "none";
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+      }
     }
   </script>
   <!-- Global site tag (gtag.js) - Google Analytics -->
