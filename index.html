@@ -37,7 +37,7 @@
 
 <body class="h-100 p-2">
   <div id="app" class=" container h-100">
-    <h1 v-on:click="openFromFile" title="Load AWS Output File" class="pointer" title="Open AWS Output">Caption Creator
+    <h1 title="Load AWS Output File" class="pointer" title="Open AWS Output">Caption Creator
     </h1>
 
     <main v-if="awsjson != ''" class="h-100">
@@ -103,8 +103,10 @@
       </div>
       <a class="btn btn-outline-primary" href="#" v-on:click="openFromFile">Open AWS
         Output</a>
-      <input v-show="awsjson == ''" type="file" id="file-input" accept=".json" />
+
+      <a v-if="awsjson ==''" class="btn btn-outline-primary" href="#" v-on:click="loadSample">Load Sample</a>
       <a v-if="awsjson !=''" class="btn btn-outline-primary" href="#" v-on:click="awsjson=''">Clear Sample</a>
+      <input v-show="awsjson == ''" type="file" id="file-input" accept=".json" />
 
     </footer>
     <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
@@ -209,6 +211,9 @@
         }
       },
       methods: {
+        loadSample: function () {
+          this.awsjson = awsjson;
+        },
         editword: function (e) {
           this.wordtoupdateindex = e
           this.wordtoupdate = this.awsjson.results.items[e].alternatives[0].content
